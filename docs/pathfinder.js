@@ -4,52 +4,49 @@
 @desc   Click to spawn new path segments
 */
 
-// Self-contained: no external imports
+// Self-contained (no external imports)
 let prevFrame;
 let width, height;
 
-export const settings = {
-  fps: 30,                  // cap framerate
-  backgroundColor: "#000000",
-};
-
-// Box-drawing glyphs (UTF-8). Keep this file saved as UTF-8.
 const roads = "│─┏┓┛┗┣┳┻╋";
 
-// Utility: safe char getter from the previous frame
-function get(x, y) {
-  if (x < 0 || x >= width) return " ";
-  if (y < 0 || y >= height) return " ";
-  const v = prevFrame[y * width + x];
-  if (v == null) return " ";
-  // v can be either a string " " or an object {char, color}
-  return typeof v === "string" ? v : v.char || " ";
-}
+export const settings = {
+  fps: 30,
+  backgroundColor: "#000000",
+};
 
 function choose(list) {
   return list.charAt(Math.floor(Math.random() * list.length));
 }
 
+function get(x, y) {
+  if (x < 0 || x >= width) return " ";
+  if (y < 0 || y >= height) return " ";
+  const v = prevFrame[y * width + x];
+  // cells can be " " or {char,color}
+  return typeof v === "string" ? v : (v && v.char) ? v.char : " ";
+}
+
 export function pre(context, cursor, buffer) {
+  // seed once or on resize
   if (width !== context.cols || height !== context.rows) {
-    const length = context.cols * context.rows;
+    width = context.cols;
+    height = context.rows;
+    const length = width * height;
     for (let i = 0; i < length; i++) {
       buffer[i] =
-        Math.random() < 0.001
+        Math.random() < 0.01 // 1% seeds so it’s visible immediately
           ? { char: choose(roads), color: "white" }
           : " ";
     }
-    width = context.cols;
-    height = context.rows;
   }
-  // Copy previous buffer so reads don't mutate the current frame
   prevFrame = [...buffer];
 }
 
 export function main(coord, context, cursor, buffer) {
   const { x, y } = coord;
 
-  // Click to seed a new segment
+  // Click to plant a new seed
   if (
     cursor.pressed &&
     Math.floor(cursor.x) === x &&
@@ -60,7 +57,6 @@ export function main(coord, context, cursor, buffer) {
   }
 
   const last = get(x, y);
-
   if (last === " ") {
     let char = " ";
 
@@ -69,26 +65,26 @@ export function main(coord, context, cursor, buffer) {
     const left = get(x - 1, y);
     const right = get(x + 1, y);
 
-    // Neighbor sets (decoded from the original):
-    // top-connected neighbors
+    // grow from neighbors
     if ("│┫┣╋┏┓┳".includes(top)) {
       char = choose("││││││││││││││││││││┻┫┣┛╋");
-    }
-    // bottom-connected neighbors
-    else if ("│┻┗┣┫┛╋".includes(bottom)) {
+    } else if ("│┻┗┣┫┛╋".includes(bottom)) {
       char = choose("││││││││││││││││││││┏┓┣┫┳╋");
-    }
-    // left-connected neighbors
-    else if ("─┏┻┣┳┛╋".includes(left)) {
-      char = choose("───────────────┘┗┫┳┛╋");
-    }
-    // right-connected neighbors
-    else if ("─┓┛┫┳┻╋".includes(right)) {
-      char = choose("───────────────┏┓┣┳╋");
+    } else if ("─┏┻┣┳┛╋".includes(left)) {
+      char = choose("──────────────────┘┗┫┳┛╋");
+    } else if ("─┓┛┫┳┻╋".includes(right)) {
+      char = choose("──────────────────┏┓┣┳╋");
     }
 
-    return { char, color: "white" };
+    if (char !== " ") return { char, color: "white" };
   }
 
-  return { char: last, color: "white" };
+  // keep what's already there
+  if (last !== " ") return { char: last, color: "white" };
+
+  // otherwise leave empty
+  return " ";
 }
+
+// Also export default (some runners expect a default)
+export default { settings, pre, main };
