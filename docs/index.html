@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pathfinder — single output</title>
+  <link rel="stylesheet" href="https://play.ertdfgcvb.xyz/css/simple_console.css" />
+  <style>
+    html,body{margin:0;height:100%}
+    pre{position:fixed;inset:0;margin:0}
+    /* the font is in simple_console.css */
+  </style>
+</head>
+<body>
+  <pre></pre>
+  <script type="module">
+    import { run } from 'https://play.ertdfgcvb.xyz/src/run.js'
+    import * as program from 'https://play.ertdfgcvb.xyz/src/programs/contributed/pathfinder.js'
+    run(program, { element: document.querySelector('pre') })
+  </script>
+</body>
+</html>
