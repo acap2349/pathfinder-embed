@@ -4,32 +4,45 @@
 @desc   Click to spawn new path segments
 */
 
-// No external imports — everything is self-contained for GitHub Pages.
-
+// Self-contained: no external imports
 let prevFrame;
 let width, height;
 
 export const settings = {
-  fps: 30,                 // cap framerate
-  backgroundColor: "#000000", // page background
+  fps: 30,                  // cap framerate
+  backgroundColor: "#000000",
 };
 
-// NOTE: These box-drawing characters may look odd in some editors due to encoding,
-// but they work fine when served as UTF-8.
-const roads = 'â”ƒâ”â”â”“â”—â”›â”£â”«â”³â”»â•‹';
+// Box-drawing glyphs (UTF-8). Keep this file saved as UTF-8.
+const roads = "│─┏┓┛┗┣┳┻╋";
+
+// Utility: safe char getter from the previous frame
+function get(x, y) {
+  if (x < 0 || x >= width) return " ";
+  if (y < 0 || y >= height) return " ";
+  const v = prevFrame[y * width + x];
+  if (v == null) return " ";
+  // v can be either a string " " or an object {char, color}
+  return typeof v === "string" ? v : v.char || " ";
+}
+
+function choose(list) {
+  return list.charAt(Math.floor(Math.random() * list.length));
+}
 
 export function pre(context, cursor, buffer) {
   if (width !== context.cols || height !== context.rows) {
     const length = context.cols * context.rows;
     for (let i = 0; i < length; i++) {
-      buffer[i] = Math.random() < 0.001
-        ? { char: choose(roads), color: "white" }
-        : " ";
+      buffer[i] =
+        Math.random() < 0.001
+          ? { char: choose(roads), color: "white" }
+          : " ";
     }
     width = context.cols;
     height = context.rows;
   }
-  // Copy previous frame so reads don’t mutate the current buffer
+  // Copy previous buffer so reads don't mutate the current frame
   prevFrame = [...buffer];
 }
 
@@ -56,29 +69,26 @@ export function main(coord, context, cursor, buffer) {
     const left = get(x - 1, y);
     const right = get(x + 1, y);
 
-    if ("â”ƒâ”«â”£â•‹â”â”“â”³".includes(top)) {
-      char = choose("â”ƒ".repeat(20) + "â”—â”«â”£â”»â•‹");
-    } else if ("â”ƒâ”—â”›â”£â”«â”»â•‹".includes(bottom)) {
-      char = choose("â”ƒ".repeat(20) + "â”â”“â”£â”«â”³â•‹");
-    } else if ("â”â”â”—â”£â”³â”»â•‹".includes(left)) {
-      char = choose("â”".repeat(20) + "â”“â”›â”«â”³â”»â•‹");
-    } else if ("â”â”“â”›â”«â”³â”»â•‹".includes(right)) {
-      char = choose("â”".repeat(20) + "â”â”—â”£â”³â”»â•‹");
+    // Neighbor sets (decoded from the original):
+    // top-connected neighbors
+    if ("│┫┣╋┏┓┳".includes(top)) {
+      char = choose("││││││││││││││││││││┻┫┣┛╋");
+    }
+    // bottom-connected neighbors
+    else if ("│┻┗┣┫┛╋".includes(bottom)) {
+      char = choose("││││││││││││││││││││┏┓┣┫┳╋");
+    }
+    // left-connected neighbors
+    else if ("─┏┻┣┳┛╋".includes(left)) {
+      char = choose("───────────────┘┗┫┳┛╋");
+    }
+    // right-connected neighbors
+    else if ("─┓┛┫┳┻╋".includes(right)) {
+      char = choose("───────────────┏┓┣┳╋");
     }
 
     return { char, color: "white" };
   }
 
   return { char: last, color: "white" };
-}
-
-function choose(list) {
-  return list.charAt(Math.floor(Math.random() * list.length));
-}
-
-function get(x, y) {
-  if (x < 0 || x >= width) return 0;
-  if (y < 0 || y >= height) return 0;
-  const index = y * width + x;
-  return prevFrame[index].char;
 }
