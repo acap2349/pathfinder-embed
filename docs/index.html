@@ -7,14 +7,13 @@
   <style>
     html,body{margin:0;height:100%}
     pre{position:fixed;inset:0;margin:0}
-    /* the font is in simple_console.css */
   </style>
 </head>
 <body>
   <pre></pre>
   <script type="module">
-    import { run } from 'https://play.ertdfgcvb.xyz/src/run.js'
-    import * as program from 'https://play.ertdfgcvb.xyz/src/programs/contributed/pathfinder.js'
+    import { run } from './run.js'
+    import * as program from './pathfinder.js'
     run(program, { element: document.querySelector('pre') })
   </script>
 </body>
