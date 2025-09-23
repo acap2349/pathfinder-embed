@@ -2,19 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pathfinder — single output</title>
+  <!-- Optional: just for the monospace “console” look -->
   <link rel="stylesheet" href="https://play.ertdfgcvb.xyz/css/simple_console.css" />
   <style>
-    html,body{margin:0;height:100%}
-    pre{position:fixed;inset:0;margin:0}
+    html, body { margin: 0; height: 100%; }
+    pre { position: fixed; inset: 0; margin: 0; }
   </style>
 </head>
 <body>
   <pre></pre>
+
   <script type="module">
-    import { run } from './run.js'
-    import * as program from './pathfinder.js'
-    run(program, { element: document.querySelector('pre') })
+    // Assumes index.html, run.js, and pathfinder.js are side-by-side in /docs
+    import { run } from './run.js';
+    import * as program from './pathfinder.js';
+
+    run(program, { element: document.querySelector('pre') });
   </script>
 </body>
 </html>
