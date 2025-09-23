@@ -4,21 +4,20 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pathfinder — single output</title>
-  <!-- Optional: just for the monospace “console” look -->
   <link rel="stylesheet" href="https://play.ertdfgcvb.xyz/css/simple_console.css" />
   <style>
     html, body { margin: 0; height: 100%; }
     pre { position: fixed; inset: 0; margin: 0; }
+    pre { color: white; } /* ensure white glyphs are visible */
   </style>
 </head>
 <body>
   <pre></pre>
-
   <script type="module">
-    // Assumes index.html, run.js, and pathfinder.js are side-by-side in /docs
     import { run } from './run.js';
-    import * as program from './pathfinder.js';
-
+    // Try default export first; if not present, run() will also accept the module object
+    import programDefault, * as programNS from './pathfinder.js';
+    const program = programDefault || programNS;
     run(program, { element: document.querySelector('pre') });
   </script>
 </body>
