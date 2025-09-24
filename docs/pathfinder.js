@@ -4,26 +4,30 @@
 @desc   Click to spawn new path segments
 */
 
-// Self-contained: no external imports
+// Self-contained: no external imports.
 let prevFrame;
-let width, height;
+let width = 0, height = 0;
+
+// Box-drawing glyphs (UTF-8). If your font doesn't support these,
+// they still render in most browsers; otherwise they'll fall back.
+const roads = "│─┏┓┛┗┣┳┻╋";
 
 export const settings = {
-  fps: 30,                  // cap framerate
+  fps: 30,
   backgroundColor: "#000000",
 };
 
-// Box-drawing glyphs (UTF-8). Keep this file saved as UTF-8.
-const roads = "│─┏┓┛┗┣┳┻╋";
+// Safe accessor: cells may be " " or {char,color}
+function getCharFromCell(cell) {
+  if (cell == null) return " ";
+  return (typeof cell === "string") ? cell : (cell.char || " ");
+}
 
-// Utility: safe char getter from the previous frame
 function get(x, y) {
   if (x < 0 || x >= width) return " ";
   if (y < 0 || y >= height) return " ";
-  const v = prevFrame[y * width + x];
-  if (v == null) return " ";
-  // v can be either a string " " or an object {char, color}
-  return typeof v === "string" ? v : v.char || " ";
+  const cell = prevFrame[y * width + x];
+  return getCharFromCell(cell);
 }
 
 function choose(list) {
@@ -31,25 +35,39 @@ function choose(list) {
 }
 
 export function pre(context, cursor, buffer) {
+  // Initialize on first run or resize
   if (width !== context.cols || height !== context.rows) {
-    const length = context.cols * context.rows;
-    for (let i = 0; i < length; i++) {
-      buffer[i] =
-        Math.random() < 0.001
-          ? { char: choose(roads), color: "white" }
-          : " ";
-    }
     width = context.cols;
     height = context.rows;
+    const length = width * height;
+
+    // Fill with spaces as OBJECTS so renderer definitely has {char,color}
+    for (let i = 0; i < length; i++) {
+      buffer[i] = { char: " ", color: "white" };
+    }
+
+    // Seed a few visible starters so something shows immediately
+    const seeds = Math.max(20, Math.floor((width * height) * 0.005)); // ~0.5%
+    for (let i = 0; i < seeds; i++) {
+      const idx = Math.floor(Math.random() * length);
+      buffer[idx] = { char: choose(roads), color: "white" };
+    }
+
+    // Tiny diagonal "hello" stroke for sanity (top-left corner)
+    for (let d = 0; d < Math.min(12, Math.min(width, height)); d++) {
+      buffer[d * width + d] = { char: "│", color: "white" };
+      if (d + 1 < width) buffer[d * width + (d + 1)] = { char: "─", color: "white" };
+    }
   }
-  // Copy previous buffer so reads don't mutate the current frame
+
+  // Copy previous frame so reads won't mutate current buffer
   prevFrame = [...buffer];
 }
 
 export function main(coord, context, cursor, buffer) {
   const { x, y } = coord;
 
-  // Click to seed a new segment
+  // Allow clicks to plant seeds
   if (
     cursor.pressed &&
     Math.floor(cursor.x) === x &&
@@ -60,35 +78,32 @@ export function main(coord, context, cursor, buffer) {
   }
 
   const last = get(x, y);
-
   if (last === " ") {
     let char = " ";
 
-    const top = get(x, y - 1);
+    const top    = get(x, y - 1);
     const bottom = get(x, y + 1);
-    const left = get(x - 1, y);
-    const right = get(x + 1, y);
+    const left   = get(x - 1, y);
+    const right  = get(x + 1, y);
 
-    // Neighbor sets (decoded from the original):
-    // top-connected neighbors
+    // Grow based on neighbors (decoded neighbor sets)
     if ("│┫┣╋┏┓┳".includes(top)) {
       char = choose("││││││││││││││││││││┻┫┣┛╋");
-    }
-    // bottom-connected neighbors
-    else if ("│┻┗┣┫┛╋".includes(bottom)) {
+    } else if ("│┻┗┣┫┛╋".includes(bottom)) {
       char = choose("││││││││││││││││││││┏┓┣┫┳╋");
-    }
-    // left-connected neighbors
-    else if ("─┏┻┣┳┛╋".includes(left)) {
-      char = choose("───────────────┘┗┫┳┛╋");
-    }
-    // right-connected neighbors
-    else if ("─┓┛┫┳┻╋".includes(right)) {
-      char = choose("───────────────┏┓┣┳╋");
+    } else if ("─┏┻┣┳┛╋".includes(left)) {
+      char = choose("──────────────────┘┗┫┳┛╋");
+    } else if ("─┓┛┫┳┻╋".includes(right)) {
+      char = choose("──────────────────┏┓┣┳╋");
     }
 
+    // Always return an object
     return { char, color: "white" };
   }
 
+  // Keep what's already there, as an object
   return { char: last, color: "white" };
 }
+
+// Some runners prefer a default export; include both to be safe.
+export default { settings, pre, main };
