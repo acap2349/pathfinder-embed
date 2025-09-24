@@ -47,7 +47,7 @@ export function pre(context, cursor, buffer) {
     }
 
     // Seed a few visible starters so something shows immediately
-    const seeds = Math.max(20, Math.floor((width * height) * 0.0005)); // ~0.5%
+    const seeds = Math.max(10, Math.floor((width * height) * 0.00005)); // ~0.5%
     for (let i = 0; i < seeds; i++) {
       const idx = Math.floor(Math.random() * length);
       buffer[idx] = { char: choose(roads), color: "white" };
@@ -74,7 +74,7 @@ export function main(coord, context, cursor, buffer) {
     Math.floor(cursor.y) === y &&
     get(x, y) === " "
   ) {
-    return { char: choose(roads), color: "white" };
+    return { char: choose(roads), color: "red" };
   }
 
   const last = get(x, y);
