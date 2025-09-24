@@ -4,21 +4,42 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pathfinder — single output</title>
+  <!-- Optional monospace styling -->
   <link rel="stylesheet" href="https://play.ertdfgcvb.xyz/css/simple_console.css" />
   <style>
-    html, body { margin: 0; height: 100%; }
-    pre { position: fixed; inset: 0; margin: 0; }
-    pre { color: white; } /* ensure white glyphs are visible */
+    /* Force a black page even if the program settings are ignored */
+    html, body { margin: 0; height: 100%; background:#000; }
+    pre {
+      position: fixed; inset: 0; margin: 0;
+      /* Make glyphs visible regardless of external CSS */
+      color: #fff; background: #000; font: 16px/1.1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      white-space: pre; overflow: hidden;
+    }
   </style>
 </head>
 <body>
-  <pre></pre>
+  <pre id="out">loading…</pre>
+
   <script type="module">
+    // 1) Import runner and program (works whether program uses default or named exports)
     import { run } from './run.js';
-    // Try default export first; if not present, run() will also accept the module object
     import programDefault, * as programNS from './pathfinder.js';
     const program = programDefault || programNS;
-    run(program, { element: document.querySelector('pre') });
+
+    // 2) Simple health log so we know the module is loaded
+    console.log('[embed] program keys:', Object.keys(program));
+
+    // 3) Start the renderer
+    const el = document.getElementById('out');
+    el.textContent = ''; // clear "loading…"
+    run(program, { element: el });
+
+    // 4) Safety: if nothing paints after a tick, write a hint on screen
+    setTimeout(() => {
+      if (!el.textContent || /^\s*$/.test(el.textContent)) {
+        el.textContent = '⚠️ Still blank. Click inside. If nothing appears, open Console.';
+      }
+    }, 800);
   </script>
 </body>
 </html>
