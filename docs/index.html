@@ -3,31 +3,23 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pathfinder — single output</title>
-  <!-- Optional monospace styling -->
-  <link rel="stylesheet" href="https://play.ertdfgcvb.xyz/css/simple_console.css" />
+  <title>Pathfinder — canvas output</title>
   <style>
     /* Full-bleed black background */
-    html, body { margin: 0; height: 100%; background:#000; }
-    /* The runner renders into this element */
-    pre {
-      position: fixed; inset: 0; margin: 0;
-      background:#000;                /* keep background black */
-      font: 16px/1.1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      white-space: pre; overflow: hidden;
-      /* IMPORTANT: no `color:` here — let each cell's {color} show */
-    }
+    html, body { margin: 0; height: 100%; background: #000; }
+    /* Canvas fills the viewport */
+    canvas { position: fixed; inset: 0; display: block; background: #000; }
   </style>
 </head>
 <body>
-  <pre id="out"></pre>
+  <canvas id="out"></canvas>
 
   <script type="module">
     import { run } from './run.js';
     import programDefault, * as programNS from './pathfinder.js';
-    // Works whether the program exports default or named { settings, pre, main }
     const program = programDefault || programNS;
 
+    // Point the runner at the canvas instead of a <pre>
     const el = document.getElementById('out');
     run(program, { element: el });
   </script>
