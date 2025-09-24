@@ -1,15 +1,18 @@
 /**
-@author Alex Miller modified by Scott Siemens
+@author Alex Miller
 @title  Pathfinder
 @desc   Click to spawn new path segments
 */
 
-// Self-contained: no external imports.
+// -------- color knobs --------
+const SEED_COLOR   = "#FFFFFF"; // initial seeds & click-to-seed
+const GROWTH_COLOR = "#E81313"; // NEWLY ADDED cells
+// -----------------------------
+
 let prevFrame;
 let width = 0, height = 0;
 
-// Box-drawing glyphs (UTF-8). If your font doesn't support these,
-// they still render in most browsers; otherwise they'll fall back.
+// Box-drawing glyphs (UTF-8)
 const roads = "│─┏┓┛┗┣┳┻╋";
 
 export const settings = {
@@ -17,22 +20,16 @@ export const settings = {
   backgroundColor: "#000000",
 };
 
-// Safe accessor: cells may be " " or {char,color}
-function getCharFromCell(cell) {
-  if (cell == null) return " ";
-  return (typeof cell === "string") ? cell : (cell.char || " ");
+// --- helpers ---
+function getCell(x, y) {
+  if (x < 0 || x >= width)  return { char: " ", color: SEED_COLOR };
+  if (y < 0 || y >= height) return { char: " ", color: SEED_COLOR };
+  const v = prevFrame[y * width + x];
+  if (v == null) return { char: " ", color: SEED_COLOR };
+  return typeof v === "string" ? { char: v, color: SEED_COLOR } : v;
 }
-
-function get(x, y) {
-  if (x < 0 || x >= width) return " ";
-  if (y < 0 || y >= height) return " ";
-  const cell = prevFrame[y * width + x];
-  return getCharFromCell(cell);
-}
-
-function choose(list) {
-  return list.charAt(Math.floor(Math.random() * list.length));
-}
+function getChar(x, y) { return getCell(x, y).char; }
+function choose(list) { return list.charAt(Math.floor(Math.random() * list.length)); }
 
 export function pre(context, cursor, buffer) {
   // Initialize on first run or resize
@@ -41,52 +38,47 @@ export function pre(context, cursor, buffer) {
     height = context.rows;
     const length = width * height;
 
-    // Fill with spaces as OBJECTS so renderer definitely has {char,color}
+    // Fill with explicit objects so colors persist
     for (let i = 0; i < length; i++) {
-      buffer[i] = { char: " ", color: "white" };
+      buffer[i] = { char: " ", color: SEED_COLOR };
     }
 
-    // Seed a few visible starters so something shows immediately
-    const seeds = Math.max(20, Math.floor((width * height) * 0.0025)); // ~0.25%
+    // Seed a few visible starters
+    const seeds = Math.max(20, Math.floor((width * height) * 0.005)); // ~0.5%
     for (let i = 0; i < seeds; i++) {
       const idx = Math.floor(Math.random() * length);
-      buffer[idx] = { char: choose(roads), color: "white" };
-    }
-
-    // Tiny diagonal "hello" stroke for sanity (top-left corner)
-    for (let d = 0; d < Math.min(12, Math.min(width, height)); d++) {
-      buffer[d * width + d] = { char: "│", color: "white" };
-      if (d + 1 < width) buffer[d * width + (d + 1)] = { char: "─", color: "white" };
+      buffer[idx] = { char: choose(roads), color: SEED_COLOR };
     }
   }
 
-  // Copy previous frame so reads won't mutate current buffer
+  // Copy previous frame
   prevFrame = [...buffer];
 }
 
 export function main(coord, context, cursor, buffer) {
   const { x, y } = coord;
 
-  // Allow clicks to plant seeds
+  // Click to plant a seed (seed color)
   if (
     cursor.pressed &&
     Math.floor(cursor.x) === x &&
     Math.floor(cursor.y) === y &&
-    get(x, y) === " "
+    getChar(x, y) === " "
   ) {
-    return { char: choose(roads), color: "white" };
+    return { char: choose(roads), color: SEED_COLOR };
   }
 
-  const last = get(x, y);
-  if (last === " ") {
+  const lastChar = getChar(x, y);
+
+  // Empty cell: potentially GROW into it using neighbor rules
+  if (lastChar === " ") {
+    const top    = getChar(x, y - 1);
+    const bottom = getChar(x, y + 1);
+    const left   = getChar(x - 1, y);
+    const right  = getChar(x + 1, y);
+
     let char = " ";
 
-    const top    = get(x, y - 1);
-    const bottom = get(x, y + 1);
-    const left   = get(x - 1, y);
-    const right  = get(x + 1, y);
-
-    // Grow based on neighbors (decoded neighbor sets)
     if ("│┫┣╋┏┓┳".includes(top)) {
       char = choose("││││││││││││││││││││┻┫┣┛╋");
     } else if ("│┻┗┣┫┛╋".includes(bottom)) {
@@ -97,13 +89,17 @@ export function main(coord, context, cursor, buffer) {
       char = choose("──────────────────┏┓┣┳╋");
     }
 
-    // Always return an object
-    return { char, color: "white" };
+    // If we added a new char, color it as NEW GROWTH
+    if (char !== " ") return { char, color: GROWTH_COLOR };
+
+    // Otherwise leave empty
+    return { char: " ", color: SEED_COLOR };
   }
 
-  // Keep what's already there, as an object
-  return { char: last, color: "white" };
+  // Non-empty: keep what was there (preserve original color)
+  const prev = getCell(x, y);
+  return { char: prev.char, color: prev.color };
 }
 
-// Some runners prefer a default export; include both to be safe.
+// Default export for safety
 export default { settings, pre, main };
