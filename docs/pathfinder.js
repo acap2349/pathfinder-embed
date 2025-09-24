@@ -1,5 +1,5 @@
 /**
-@author Alex Miller
+@author Alex Miller modified by Scott Siemens
 @title  Pathfinder
 @desc   Click to spawn new path segments
 */
@@ -47,7 +47,7 @@ export function pre(context, cursor, buffer) {
     }
 
     // Seed a few visible starters so something shows immediately
-    const seeds = Math.max(20, Math.floor((width * height) * 0.005)); // ~0.5%
+    const seeds = Math.max(20, Math.floor((width * height) * 0.0025)); // ~0.25%
     for (let i = 0; i < seeds; i++) {
       const idx = Math.floor(Math.random() * length);
       buffer[idx] = { char: choose(roads), color: "white" };
